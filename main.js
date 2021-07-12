@@ -91,8 +91,8 @@ tclient.on("PRIVMSG", async msg => {
                 tclient.privmsg(msg.channelName, `You're already being ignored!`);
             }
             else {
-                console.log(`Ignoring user #${msg.senderUsername}`);
-                tclient.privmsg(msg.channelName, `Ignoring user #${msg.senderUsername}`);
+                console.log(`Ignoring user ${msg.displayName}`);
+                tclient.privmsg(msg.channelName, `Ignoring user ${msg.displayName}`);
                 config["ignored_users"].push(msg.senderUsername);
                 await update_config();
             }
@@ -102,8 +102,8 @@ tclient.on("PRIVMSG", async msg => {
                 tclient.privmsg(msg.channelName, `You aren't being ignored!`);
             }
             else {
-                console.log(`Unignoring user #${msg.senderUsername}`);
-                tclient.privmsg(msg.channelName, `Unignoring user #${msg.senderUsername}`);
+                console.log(`Unignoring user ${msg.displayName}`);
+                tclient.privmsg(msg.channelName, `Unignoring user ${msg.displayName}`);
                 config["ignored_users"].splice(config["ignored_users"].indexOf(msg.senderUsername), 1);
                 await update_config();
             }
