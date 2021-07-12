@@ -1,0 +1,136 @@
+const { ChatClient } = require("dank-twitch-irc");
+const owoify = require('owoify-js').default
+const fs = require('fs');
+
+function between(min, max) {
+    return Math.floor(
+        Math.random() * (max - min + 1) + min
+    )
+}
+
+async function to_uwuify(msg) {
+    if (msg.messageText.startsWith("!uwuify")) {
+        //console.log("force uwuify with command");
+        return true;
+    }
+    if (config["ignored_users"].indexOf(msg.senderUsername) > -1) {
+        //console.log("ignored");
+        return false; //Don't uwuify is the user is ignored
+    }
+    let uwuified = owoify(msg.messageText, "uwu");
+    if (msg.messageText === uwuified) {
+        //console.log("unchanged");
+        return false; //Don't uwuify if the message is going to be unchanged
+    }
+    if (between(1, config["chance_to_uwuify"]) === 1) {
+        return true; //A one in config defined chance to uwuify
+    }
+    //console.log("rng");
+    return false;
+}
+
+async function update_config() {
+    const data = JSON.stringify(config);
+    fs.writeFile('./config.json', data, 'utf8', (err) => {
+        if (err) {
+            console.log(`Error writing file: ${err}`);
+        } else {
+            console.log(`Config updated successfully!`);
+        }
+    
+    });
+}
+
+try {
+    const data = fs.readFileSync('./config.json', 'utf8');
+    var config = JSON.parse(data);
+} catch (err) {
+    console.log(`Error reading file from disk: ${err}`);
+}
+
+let tclient = new ChatClient({
+    username: config.username,
+    password: config.password,
+
+    rateLimits: "default"
+}); //Create the twitch client object
+
+tclient.on("ready", () => console.log("Successfully connected to chat"));
+
+tclient.on("PRIVMSG", async msg => {
+    if (msg.senderUsername == config.username) {
+        return;
+    }
+    if (msg.channelName == config.username) { //Don't uwuify messages in the bots channel
+        if (msg.messageText === "!join") {
+            if (config["joined_channels"].indexOf(msg.senderUsername) > -1) {
+                tclient.privmsg(msg.channelName, `Bot has already joined ${msg.senderUsername}!`);
+            }
+            else {
+                console.log(`Joining channel #${msg.senderUsername}`);
+                tclient.privmsg(msg.channelName, `Joining channel #${msg.senderUsername}`);
+                config["joined_channels"].push(msg.senderUsername);
+                tclient.join(msg.senderUsername);
+                await update_config();
+            }
+        }
+        else if (msg.messageText === "!part" || msg.messageText === "!leave") {
+            if (config["joined_channels"].indexOf(msg.senderUsername) === -1) {
+                tclient.privmsg(msg.channelName, `Bot not in channel ${msg.senderUsername}!`);
+            }
+            else {
+                console.log(`Leaving channel #${msg.senderUsername}`);
+                tclient.privmsg(msg.channelName, `Leaving channel #${msg.senderUsername}`);
+                config["joined_channels"].splice(config["joined_channels"].indexOf(msg.senderUsername), 1);
+                tclient.part(msg.senderUsername);
+                await update_config();
+            }
+        }
+        else if (msg.messageText === "!ignore") {
+            if (config["ignored_users"].indexOf(msg.senderUsername) > -1) {
+                tclient.privmsg(msg.channelName, `You're already being ignored!`);
+            }
+            else {
+                console.log(`Ignoring user #${msg.senderUsername}`);
+                tclient.privmsg(msg.channelName, `Ignoring user #${msg.senderUsername}`);
+                config["ignored_users"].push(msg.senderUsername);
+                await update_config();
+            }
+        }
+        else if (msg.messageText === "!unignore") {
+            if (config["ignored_users"].indexOf(msg.senderUsername) === -1) {
+                tclient.privmsg(msg.channelName, `You aren't being ignored!`);
+            }
+            else {
+                console.log(`Unignoring user #${msg.senderUsername}`);
+                tclient.privmsg(msg.channelName, `Unignoring user #${msg.senderUsername}`);
+                config["ignored_users"].splice(config["ignored_users"].indexOf(msg.senderUsername), 1);
+                await update_config();
+            }
+        }
+        else if (msg.messageText === "!help") {
+            tclient.privmsg(msg.channelName, `!join to make the bot join your channel, !part or !leave to make it leave. !ignore will make the bot not uwuify your messages and !unignore will make it uwuify them again. You can also run !uwuify <message> to force it to uwuify. UwU`)
+        }
+    }
+    else {
+        if (await to_uwuify(msg) === true) {
+            if (msg.messageText.startsWith("!uwuify")) {
+                var message = msg.messageText.split(' ').slice(1).join(' ');
+            }
+            else {
+                var message = msg.messageText
+            }
+            console.log(`uwuifying message from ${msg.senderUsername} in #${msg.channelName}`);
+            let uwuified = owoify(message, "uwu");
+            tclient.privmsg(msg.channelName, uwuified);
+        }
+    }
+});
+
+if (config["joined_channels"].indexOf(config.username) === -1) {
+    config.joined_channels.push(config.username);
+}
+
+tclient.connect();
+console.log(`Connecting to channels ${config.joined_channels}`);
+tclient.joinAll(config.joined_channels);
