@@ -9,7 +9,7 @@ function between(min, max) {
 }
 
 async function to_uwuify(msg) {
-    if (msg.messageText.startsWith("!uwuify")) {
+    if (msg.messageText.startsWith("!uwuify") || msg.messageText.startsWith("!uvuify") || msg.messageText.startsWith("!owoify")) {
         //console.log("force uwuify with command");
         return true;
     }
@@ -114,14 +114,27 @@ tclient.on("PRIVMSG", async msg => {
     }
     else {
         if (await to_uwuify(msg) === true) {
+            let mode = "uwu";
             if (msg.messageText.startsWith("!uwuify")) {
                 var message = msg.messageText.split(' ').slice(1).join(' ');
+                mode = "uwu";
+                console.log(`uwuifying message from ${msg.senderUsername} in #${msg.channelName}`);
+            }
+            else if (msg.messageText.startsWith("!owoify")) {
+                var message = msg.messageText.split(' ').slice(1).join(' ');
+                mode = "owo";
+                console.log(`owoifying message from ${msg.senderUsername} in #${msg.channelName}`);
+            }
+            else if (msg.messageText.startsWith("!uvuify")) {
+                var message = msg.messageText.split(' ').slice(1).join(' ');
+                mode = "uvu";
+                console.log(`uvuifying message from ${msg.senderUsername} in #${msg.channelName}`);
             }
             else {
                 var message = msg.messageText
+                console.log(`uwuifying message from ${msg.senderUsername} in #${msg.channelName}`);
             }
-            console.log(`uwuifying message from ${msg.senderUsername} in #${msg.channelName}`);
-            let uwuified = owoify(message, "uwu");
+            let uwuified = owoify(message, mode);
             tclient.privmsg(msg.channelName, uwuified.substring(0, 500));
         }
     }
