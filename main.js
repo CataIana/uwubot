@@ -122,7 +122,7 @@ tclient.on("PRIVMSG", async msg => {
             }
             console.log(`uwuifying message from ${msg.senderUsername} in #${msg.channelName}`);
             let uwuified = owoify(message, "uwu");
-            tclient.privmsg(msg.channelName, uwuified);
+            tclient.privmsg(msg.channelName, uwuified.substring(0, 500));
         }
     }
 });
