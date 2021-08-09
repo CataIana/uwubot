@@ -13,7 +13,7 @@ uwuifies messages in twitch chat
 
 * Fill in username and password in `exampleconfig.json` and rename it to `config.json`
 
-* Run the bot with `nodejs main.js`
+* Run the bot with `nodejs index.js`
 
 # Commands
 
