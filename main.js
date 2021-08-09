@@ -8,7 +8,7 @@ function between(min, max) {
     )
 }
 
-async function to_uwuify(msg) {
+async function to_uwuify(msg, mode) {
     if (msg.messageText.startsWith("!uwuify") || msg.messageText.startsWith("!uvuify") || msg.messageText.startsWith("!owoify")) {
         //console.log("force uwuify with command");
         return true;
@@ -17,7 +17,7 @@ async function to_uwuify(msg) {
         //console.log("ignored");
         return false; //Don't uwuify is the user is ignored
     }
-    let uwuified = owoify(msg.messageText, "uwu");
+    let uwuified = owoify(msg.messageText, mode);
     if (msg.messageText === uwuified) {
         //console.log("unchanged");
         return false; //Don't uwuify if the message is going to be unchanged
@@ -113,8 +113,8 @@ tclient.on("PRIVMSG", async msg => {
         }
     }
     else {
-        if (await to_uwuify(msg) === true) {
-            let mode = "uwu";
+        var mode = "uwu"; // Default mode
+        if (await to_uwuify(msg, mode) === true) {
             if (msg.messageText.startsWith("!uwuify")) {
                 var message = msg.messageText.split(' ').slice(1).join(' ');
                 mode = "uwu";
