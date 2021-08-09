@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "dank-twitch-irc": "^4.3.0",
+    "owoify-js": "^1.0.7"
+  }
+}
