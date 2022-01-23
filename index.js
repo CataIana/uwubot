@@ -63,25 +63,29 @@ tclient.on("PRIVMSG", async msg => {
     }
     if (msg.channelName == config.username) { //Don't uwuify messages in the bots channel
         if (msg.messageText === "!join") {
-            if (config["joined_channels"].indexOf(msg.senderUsername) > -1) {
+            if (tclient.joinedChannels.includes(msg.senderUsername)) {
                 tclient.privmsg(msg.channelName, `Bot has already joined ${msg.senderUsername}!`);
             }
             else {
                 console.log(`Joining channel #${msg.senderUsername}`);
                 tclient.privmsg(msg.channelName, `Joining channel #${msg.senderUsername}`);
-                config["joined_channels"].push(msg.senderUsername);
+                if (!config["joined_channels"].includes(msg.senderUsername)) {
+                    config["joined_channels"].push(msg.senderUsername);
+                }
                 tclient.join(msg.senderUsername);
                 await update_config();
             }
         }
         else if (msg.messageText === "!part" || msg.messageText === "!leave") {
-            if (config["joined_channels"].indexOf(msg.senderUsername) === -1) {
+            if (!tclient.joinedChannels.includes(msg.senderUsername)) {
                 tclient.privmsg(msg.channelName, `Bot not in channel ${msg.senderUsername}!`);
             }
             else {
                 console.log(`Leaving channel #${msg.senderUsername}`);
                 tclient.privmsg(msg.channelName, `Leaving channel #${msg.senderUsername}`);
-                config["joined_channels"].splice(config["joined_channels"].indexOf(msg.senderUsername), 1);
+                if (config["joined_channels"].includes(msg.senderUsername)) {
+                    config["joined_channels"].splice(config["joined_channels"].indexOf(msg.senderUsername), 1);
+                }
                 tclient.part(msg.senderUsername);
                 await update_config();
             }
@@ -109,7 +113,26 @@ tclient.on("PRIVMSG", async msg => {
             }
         }
         else if (msg.messageText === "!help") {
-            tclient.privmsg(msg.channelName, `!join to make the bot join your channel, !part or !leave to make it leave. !ignore will make the bot not uwuify your messages and !unignore will make it uwuify them again. You can also run !uwuify <message> to force it to uwuify. UwU`)
+            tclient.privmsg(msg.channelName, `!join to make the bot join your channel, !part or !leave to make it leave. !ignore will make the bot not uwuify your messages and !unignore will make it uwuify them again. !maxlength allows you to limit message length. You can also run !uwuify <message> to force it to uwuify. UwU`);
+        }
+        else if (msg.messageText.startsWith("!maxlength")) {
+            var maxlength = msg.messageText.split(" ")[1];
+            if (maxlength == null) {
+                tclient.privmsg(msg.channelName, `You must provide a number from 1 to 500!`);
+                return;
+            }
+            maxlength = Number(maxlength);
+            if (isNaN(maxlength)) {
+                tclient.privmsg(msg.channelName, `Value must be a number from 1 to 500!`);
+                return;
+            }
+            if (maxlength > 500 || maxlength < 1) {
+                tclient.privmsg(msg.channelName, `Value must be a number from 1 to 500!`);
+                return;
+            }
+            config["max_length"][msg.senderUsername] = maxlength;
+            tclient.privmsg(msg.channelName, `Set response max length to ${maxlength} in channel ${msg.senderUsername}`);
+            await update_config();
         }
     }
     else {
@@ -135,7 +158,11 @@ tclient.on("PRIVMSG", async msg => {
                 console.log(`uwuifying message from ${msg.senderUsername} in #${msg.channelName}`);
             }
             let uwuified = owoify(message, mode);
-            tclient.privmsg(msg.channelName, uwuified.substring(0, 500));
+            let maxlength = config["max_length"][msg.senderUsername];
+            if (maxlength == null) {
+                maxlength = 500;
+            }
+            tclient.privmsg(msg.channelName, uwuified.substring(0, maxlength));
         }
     }
 });
